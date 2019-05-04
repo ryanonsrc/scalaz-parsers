@@ -44,10 +44,17 @@ class ClassicExampleSpec extends Specification {
         { case Operation(e1, `op`, e2) => e1 -> (op -> e2) }
       )
 
+    def operationExpressionEq(
+      op: Operator
+    ): parsing.Recurse[Operator /\ Expression, Expression] =
+      lift[parsing.↻[Operator /\ Expression, Expression], Expression](
+        { case x => x}
+      )
+
     type Codec[A] = parsing.Codec[String, A]
 
     val char: Codec[Char] = parsing.Codec(
-      liftF(
+      liftFG(
         s =>
           s.headOption
             .fold[Either[String, Char]](Left("Empty input"))(Right(_))
@@ -77,9 +84,9 @@ class ClassicExampleSpec extends Specification {
 
     val case0: Codec[Expression] = constant ∘ constantExpressionEq
 
-    val case1: Codec[Expression] = (case0 ~ (star ~ case0).many) ∘ foldl("hm...")(
+    val case1: Codec[Expression] = (case0 ~ (star ~ case0).many) ∘ foldcf(
       operationExpressionEq(Mul)
-    )
+    )()
 
     val case2: Codec[Expression] = (case1 ~ (plus ~ case1).many) ∘ foldl("hmm..")(
       operationExpressionEq(Add)
